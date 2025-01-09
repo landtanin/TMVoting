@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toastmasters Voting System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hidden {
+            display: none;
+        }
+        #qrCode img {
+            max-width: 200px;
+            margin: 20px auto;
+        }
+        .vote-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .vote-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .vote-card.selected {
+            border: 2px solid #0d6efd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Section -->
+    <div id="adminSection" class="container mt-5">
+        <h2 class="mb-4">Admin Dashboard</h2>
+        <div class="card">
+            <div class="card-body">
+                <form id="createEventForm">
+                    <div class="mb-3">
+                        <label for="meetingDate" class="form-label">Meeting Date</label>
+                        <input type="date" class="form-control" id="meetingDate" required>
+                    </div>
+                    <div id="speakersContainer">
+                        <div class="mb-3">
+                            <label class="form-label">Speakers</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control speaker-input" placeholder="Speaker name" required>
+                                <button type="button" class="btn btn-outline-secondary remove-speaker" disabled>Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary mb-3" id="addSpeaker">Add Speaker</button>
+                    <button type="submit" class="btn btn-primary d-block w-100">Create Voting Room</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- QR Code Display -->
+        <div id="qrCode" class="text-center hidden mt-4">
+            <h3>Voting Room QR Code</h3>
+            <div id="qrCodeImage"></div>
+            <p>Or share this link:</p>
+            <div class="input-group mb-3">
+                <input type="text" id="votingLink" class="form-control" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Copy</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="mt-4 hidden">
+            <h3>Live Results</h3>
+            <div id="voteResults" class="list-group">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Voter Section -->
+    <div id="voterSection" class="container mt-5 hidden">
+        <h2 class="mb-4">Cast Your Vote</h2>
+        <div id="speakersList" class="row g-4">
+            <!-- Speaker cards will be populated here -->
+        </div>
+        <button id="submitVote" class="btn btn-primary mt-4 w-100" disabled>Submit Vote</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        // Check if we're on the voting page
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+
+        if (roomId) {
+            // Show voter section
+            $('#voterSection').removeClass('hidden');
+            $('#adminSection').addClass('hidden');
+            loadVotingRoom(roomId);
+        } else {
+            // Show admin section
+            $('#adminSection').removeClass('hidden');
+            $('#voterSection').addClass('hidden');
+        }
+
+        // Admin Section Logic
+        let speakers = 1;
+
+        $('#addSpeaker').click(() => {
+            speakers++;
+            const newSpeaker = `
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control speaker-input" placeholder="Speaker name" required>
+                    <button type="button" class="btn btn-outline-secondary remove-speaker">Remove</button>
+                </div>
+            `;
+            $('#speakersContainer').append(newSpeaker);
+            updateRemoveButtons();
+        });
+
+        $(document).on('click', '.remove-speaker', function() {
+            $(this).closest('.input-group').remove();
+            speakers--;
+            updateRemoveButtons();
+        });
+
+        function updateRemoveButtons() {
+            const removeButtons = $('.remove-speaker');
+            if (speakers === 1) {
+                removeButtons.prop('disabled', true);
+            } else {
+                removeButtons.prop('disabled', false);
+            }
+        }
+
+        $('#createEventForm').submit((e) => {
+            e.preventDefault();
+            const meetingDate = $('#meetingDate').val();
+            const speakerNames = [];
+            $('.speaker-input').each(function() {
+                speakerNames.push($(this).val());
+            });
+
+            // Generate a random room ID
+            const roomId = Math.random().toString(36).substring(2, 15);
+            
+            // Store the room data (in a real app, this would go to a database)
+            const roomData = {
+                date: meetingDate,
+                speakers: speakerNames,
+                votes: {}
+            };
+            localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+
+            // Generate QR code
+            const votingUrl = `${window.location.href}?room=${roomId}`;
+            $('#votingLink').val(votingUrl);
+            $('#qrCode').removeClass('hidden');
+            $('#resultsSection').removeClass('hidden');
+            
+            new QRCode(document.getElementById("qrCodeImage"), {
+                text: votingUrl,
+                width: 200,
+                height: 200
+            });
+
+            // Start monitoring results
+            displayResults(roomId);
+            setInterval(() => displayResults(roomId), 5000);
+        });
+
+        function copyLink() {
+            const linkInput = document.getElementById('votingLink');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        // Voter Section Logic
+        function loadVotingRoom(roomId) {
+            const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
+            if (!roomData) {
+                $('#voterSection').html('<div class="alert alert-danger">Invalid or expired voting room</div>');
+                return;
+            }
+
+            const speakersHtml = roomData.speakers.map(speaker => `
+                <div class="col-md-6">
+                    <div class="card vote-card">
+                        <div class="card-body">
+                            <h5 class="card-title">${speaker}</h5>
+                            <p class="card-text">Click to select</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            $('#speakersList').html(speakersHtml);
+
+            // Handle vote selection
+            $('.vote-card').click(function() {
+                $('.vote-card').removeClass('selected');
+                $(this).addClass('selected');
+                $('#submitVote').prop('disabled', false);
+            });
+
+            // Handle vote submission
+            $('#submitVote').click(() => {
+                const selectedSpeaker = $('.vote-card.selected .card-title').text();
+                const voterKey = `voter_${roomId}_${Date.now()}`;
+                
+                // Store the vote (in a real app, this would go to a database)
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
+                if (!roomData.votes) roomData.votes = {};
+                roomData.votes[voterKey] = selectedSpeaker;
+                localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+
+                // Show success message
+                $('#voterSection').html(`
+                    <div class="alert alert-success">
+                        Thank you for voting! Your vote has been recorded.
+                    </div>
+                `);
+            });
+        }
+
+        // Results Display Logic
+        function displayResults(roomId) {
+            const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
+            if (!roomData || !roomData.votes) return;
+
+            // Count votes
+            const voteCounts = {};
+            roomData.speakers.forEach(speaker => voteCounts[speaker] = 0);
+            Object.values(roomData.votes).forEach(vote => voteCounts[vote]++);
+
+            // Display results
+            const resultsHtml = Object.entries(voteCounts)
+                .map(([speaker, count]) => `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        ${speaker}
+                        <span class="badge bg-primary rounded-pill">${count} votes</span>
+                    </div>
+                `).join('');
+
+            $('#voteResults').html(resultsHtml);
+        }
+    </script>
+</body>
+</html>
