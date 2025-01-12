@@ -17,8 +17,12 @@
             <div class="card-body">
                 <form id="createEventForm">
                     <div class="mb-3">
-                        <label for="meetingDate" class="form-label">Meeting Date</label>
-                        <input type="date" class="form-control" id="meetingDate" required>
+                        <label for="votingCategory" class="form-label">Voting Category</label>
+                        <select class="form-control" id="votingCategory" required>
+                            <option value="best_table_topic">Best Table Topic Speaker</option>
+                            <option value="best_evaluator">Best Evaluator</option>
+                            <option value="best_speaker">Best Speaker</option>
+                        </select>
                     </div>
                     <div id="speakersContainer">
                         <div class="mb-3">

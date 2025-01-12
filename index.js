@@ -1,4 +1,6 @@
-const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app';
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3333'
+    : 'https://expressjs-postgres-production-6625.up.railway.app';
 
 let resultsInterval;
 
@@ -78,42 +80,43 @@ function updateRemoveButtons() {
 
 $('#createEventForm').submit(async (e) => {
     e.preventDefault();
-    const meetingDate = $('#meetingDate').val();
+    const votingCategory = $('#votingCategory').val();
     const speakerNames = [];
     $('.speaker-input').each(function() {
         speakerNames.push($(this).val());
     });
+
+    const requestBody = {
+        votingCategory,
+        speakers: speakerNames
+    };
+    
+    console.log('Sending request with body:', requestBody);
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/rooms`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'  // Add this line to explicitly request JSON
+                'Accept': 'application/json'
             },
-            // credentials: 'include',  // Add this if you need cookies
-            // mode: 'cors',           // Add this for CORS support
-            body: JSON.stringify({
-                meetingDate,
-                speakers: speakerNames
-            })
+            body: JSON.stringify(requestBody)
         });
 
-        // Check if response is ok before trying to parse
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
         const responseText = await response.text();
         console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers));
-        console.log('Raw response:', responseText);
+        console.log('Response text:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+        }
         
         let data;
         try {
             data = JSON.parse(responseText);
         } catch (parseError) {
             console.error('Failed to parse JSON:', parseError);
+            console.error('Raw response:', responseText);
             throw new Error('Invalid JSON response from server');
         }
 
