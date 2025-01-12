@@ -2,6 +2,8 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     ? 'http://localhost:3333'
     : 'https://expressjs-postgres-production-6625.up.railway.app';
 
+let isAdmin = false;
+
 let resultsInterval;
 
 // Check if we're on the voting page
@@ -10,17 +12,21 @@ const roomId = urlParams.get('room') || localStorage.getItem('adminRoomId');
 
 if (roomId) {
     if (urlParams.get('room')) {
-        // Show voter section for voting URL
+        // Voter view
+        isAdmin = false;
         $('#voterSection').removeClass('hidden');
         $('#adminSection').addClass('hidden');
+        $('#adminNav').addClass('hidden'); // Hide nav for voters
         loadVotingRoom(roomId);
     } else {
-        // Show admin dashboard for stored admin room
+        // Admin view
+        isAdmin = true;
         $('#adminSection').removeClass('hidden');
         $('#voterSection').addClass('hidden');
         $('#createEventForm').addClass('hidden');
         $('#qrCode').removeClass('hidden');
         $('#resultsSection').removeClass('hidden');
+        $('#adminNav').removeClass('hidden'); // Show nav for admin
         
         // Regenerate the QR code and voting link
         const votingUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
@@ -47,12 +53,14 @@ if (roomId) {
         resultsInterval = setInterval(() => displayResults(roomId), 5000);
     }
 } else {
-    // Show initial admin form
+    // Initial admin form view
+    isAdmin = true;
     $('#adminSection').removeClass('hidden');
     $('#voterSection').addClass('hidden');
     $('#createEventForm').removeClass('hidden');
     $('#qrCode').addClass('hidden');
     $('#resultsSection').addClass('hidden');
+    $('#adminNav').removeClass('hidden'); // Show nav for admin
 }
 
 // Admin Section Logic
@@ -179,6 +187,9 @@ async function loadVotingRoom(roomId) {
             $('#voterSection').html('<div class="alert alert-danger">Invalid or expired voting room</div>');
             return;
         }
+
+        // Update the header to show the voting category
+        $('#voterSection h2').text(`Vote ${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}`);
 
         const speakersHtml = roomData.speakers.map(speaker => `
             <div class="col-md-6">
