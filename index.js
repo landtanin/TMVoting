@@ -65,7 +65,19 @@ $('#createEventForm').submit(async (e) => {
             })
         });
         
-        const data = await response.json();
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        console.log('Raw response:', responseText);
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            throw new Error('Invalid JSON response from server');
+        }
+
         if (data.success) {
             // Generate voting room URL using the returned roomId
             const votingUrl = `${window.location.href}?room=${data.roomId}`;
@@ -84,10 +96,12 @@ $('#createEventForm').submit(async (e) => {
             // Start monitoring results
             displayResults(data.roomId);
             setInterval(() => displayResults(data.roomId), 5000);
+        } else {
+            alert(data.error || 'Failed to create room. Please try again.');
         }
     } catch (error) {
         console.error('Failed to create room:', error);
-        alert('Failed to create voting room. Please try again.');
+        alert('Failed to create room. Please try again.');
     }
 });
 
