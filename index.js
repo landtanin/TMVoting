@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app/';
+const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app';
 
 // Check if we're on the voting page
 const urlParams = new URLSearchParams(window.location.search);
@@ -58,16 +58,24 @@ $('#createEventForm').submit(async (e) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'  // Add this line to explicitly request JSON
             },
+            // credentials: 'include',  // Add this if you need cookies
+            // mode: 'cors',           // Add this for CORS support
             body: JSON.stringify({
                 meetingDate,
                 speakers: speakerNames
             })
         });
+
+        // Check if response is ok before trying to parse
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const responseText = await response.text();
         console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
+        console.log('Response headers:', Object.fromEntries(response.headers));
         console.log('Raw response:', responseText);
         
         let data;
