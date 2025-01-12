@@ -239,7 +239,8 @@ async function loadVotingRoom(roomId) {
                     // Show success message
                     $('#voterSection').html(`
                         <div class="alert alert-success">
-                            Thank you for voting! Your vote has been recorded.
+                            Thank you for voting for ${selectedCard.find('.card-title').text()}!
+                            Your vote has been recorded for ${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}.
                         </div>
                     `);
                 } else {
