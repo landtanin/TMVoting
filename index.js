@@ -1,3 +1,5 @@
+const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app/';
+
 // Check if we're on the voting page
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get('room');
@@ -43,7 +45,7 @@ function updateRemoveButtons() {
     }
 }
 
-$('#createEventForm').submit((e) => {
+$('#createEventForm').submit(async (e) => {
     e.preventDefault();
     const meetingDate = $('#meetingDate').val();
     const speakerNames = [];
@@ -51,32 +53,42 @@ $('#createEventForm').submit((e) => {
         speakerNames.push($(this).val());
     });
 
-    // Generate a random room ID
-    const roomId = Math.random().toString(36).substring(2, 15);
-    
-    // Store the room data (in a real app, this would go to a database)
-    const roomData = {
-        date: meetingDate,
-        speakers: speakerNames,
-        votes: {}
-    };
-    localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                meetingDate,
+                speakers: speakerNames
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Generate voting room URL using the returned roomId
+            const votingUrl = `${window.location.href}?room=${data.roomId}`;
+            
+            // Show QR code section
+            $('#votingLink').val(votingUrl);
+            $('#qrCode').removeClass('hidden');
+            $('#resultsSection').removeClass('hidden');
+            
+            new QRCode(document.getElementById("qrCodeImage"), {
+                text: votingUrl,
+                width: 200,
+                height: 200
+            });
 
-    // Generate QR code
-    const votingUrl = `${window.location.href}?room=${roomId}`;
-    $('#votingLink').val(votingUrl);
-    $('#qrCode').removeClass('hidden');
-    $('#resultsSection').removeClass('hidden');
-    
-    new QRCode(document.getElementById("qrCodeImage"), {
-        text: votingUrl,
-        width: 200,
-        height: 200
-    });
-
-    // Start monitoring results
-    displayResults(roomId);
-    setInterval(() => displayResults(roomId), 5000);
+            // Start monitoring results
+            displayResults(data.roomId);
+            setInterval(() => displayResults(data.roomId), 5000);
+        }
+    } catch (error) {
+        console.error('Failed to create room:', error);
+        alert('Failed to create voting room. Please try again.');
+    }
 });
 
 function copyLink() {
@@ -87,71 +99,106 @@ function copyLink() {
 }
 
 // Voter Section Logic
-function loadVotingRoom(roomId) {
-    const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
-    if (!roomData) {
-        $('#voterSection').html('<div class="alert alert-danger">Invalid or expired voting room</div>');
-        return;
-    }
-
-    const speakersHtml = roomData.speakers.map(speaker => `
-        <div class="col-md-6">
-            <div class="card vote-card">
-                <div class="card-body">
-                    <h5 class="card-title">${speaker}</h5>
-                    <p class="card-text">Click to select</p>
-                </div>
-            </div>
-        </div>
-    `).join('');
-
-    $('#speakersList').html(speakersHtml);
-
-    // Handle vote selection
-    $('.vote-card').click(function() {
-        $('.vote-card').removeClass('selected');
-        $(this).addClass('selected');
-        $('#submitVote').prop('disabled', false);
-    });
-
-    // Handle vote submission
-    $('#submitVote').click(() => {
-        const selectedSpeaker = $('.vote-card.selected .card-title').text();
-        const voterKey = `voter_${roomId}_${Date.now()}`;
+async function loadVotingRoom(roomId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
+            credentials: 'include',
+            mode: 'cors'
+        });
+        const roomData = await response.json();
         
-        // Store the vote (in a real app, this would go to a database)
-        const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
-        if (!roomData.votes) roomData.votes = {};
-        roomData.votes[voterKey] = selectedSpeaker;
-        localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+        if (!response.ok) {
+            $('#voterSection').html('<div class="alert alert-danger">Invalid or expired voting room</div>');
+            return;
+        }
 
-        // Show success message
-        $('#voterSection').html(`
-            <div class="alert alert-success">
-                Thank you for voting! Your vote has been recorded.
-            </div>
-        `);
-    });
-}
-
-// Results Display Logic
-function displayResults(roomId) {
-    const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`));
-    if (!roomData || !roomData.votes) return;
-
-    // Count votes
-    const voteCounts = {};
-    roomData.speakers.forEach(speaker => voteCounts[speaker] = 0);
-    Object.values(roomData.votes).forEach(vote => voteCounts[vote]++);
-
-    // Display results
-    const resultsHtml = Object.entries(voteCounts)
-        .map(([speaker, count]) => `
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                ${speaker}
-                <span class="badge bg-primary rounded-pill">${count} votes</span>
+        const speakersHtml = roomData.speakers.map(speaker => `
+            <div class="col-md-6">
+                <div class="card vote-card" data-speaker-id="${speaker.id}">
+                    <div class="card-body">
+                        <h5 class="card-title">${speaker.name}</h5>
+                        <p class="card-text">Click to select</p>
+                    </div>
+                </div>
             </div>
         `).join('');
 
-    $('#voteResults').html(resultsHtml);
+        $('#speakersList').html(speakersHtml);
+
+        // Handle vote selection
+        $('.vote-card').click(function() {
+            $('.vote-card').removeClass('selected');
+            $(this).addClass('selected');
+            $('#submitVote').prop('disabled', false);
+        });
+
+        // Handle vote submission
+        $('#submitVote').click(async () => {
+            const selectedCard = $('.vote-card.selected');
+            if (!selectedCard.length) return;
+
+            const speakerId = selectedCard.data('speaker-id');
+            const voterId = localStorage.getItem('voterId') || crypto.randomUUID();
+            localStorage.setItem('voterId', voterId);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        voterId,
+                        speakerId
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Show success message
+                    $('#voterSection').html(`
+                        <div class="alert alert-success">
+                            Thank you for voting! Your vote has been recorded.
+                        </div>
+                    `);
+                } else {
+                    alert(data.error || 'Failed to submit vote. Please try again.');
+                }
+            } catch (error) {
+                console.error('Failed to submit vote:', error);
+                alert('Failed to submit vote. Please try again.');
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load room:', error);
+        $('#voterSection').html('<div class="alert alert-danger">Failed to load voting room</div>');
+    }
+}
+
+// Results Display Logic
+async function displayResults(roomId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
+            credentials: 'include',
+            mode: 'cors'
+        });
+        const roomData = await response.json();
+        
+        if (!response.ok) return;
+
+        // Display results based on the room data
+        const resultsHtml = roomData.speakers
+            .map(speaker => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    ${speaker.name}
+                    <span class="badge bg-primary rounded-pill">${speaker.votes || 0} votes</span>
+                </div>
+            `).join('');
+
+        $('#voteResults').html(resultsHtml);
+    } catch (error) {
+        console.error('Failed to load results:', error);
+    }
 } 
