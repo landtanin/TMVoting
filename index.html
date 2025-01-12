@@ -10,9 +10,21 @@
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <span class="navbar-brand">Toastmasters Voting</span>
+            <div class="navbar-nav ms-auto">
+                <button onclick="resetAdmin()" class="btn btn-outline-secondary me-2">Start New Room</button>
+                <button onclick="showAllRooms()" class="btn btn-outline-info">View Existing Rooms</button>
+            </div>
+        </div>
+    </nav>
+
     <!-- Admin Section -->
     <div id="adminSection" class="container mt-5">
-        <h2 class="mb-4">Admin Dashboard</h2>
+        <h2 class="mb-2">Admin Dashboard</h2>
+
         <div class="card">
             <div class="card-body">
                 <form id="createEventForm">
@@ -34,14 +46,16 @@
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary mb-3" id="addSpeaker">Add Speaker</button>
-                    <button type="submit" class="btn btn-primary d-block w-100">Create Voting Room</button>
+                    <div class="d-flex flex-column gap-2">
+                        <button type="submit" class="btn btn-primary">Create Voting Room</button>
+                    </div>
                 </form>
             </div>
         </div>
 
         <!-- QR Code Display -->
         <div id="qrCode" class="text-center hidden mt-4">
-            <h3>Voting Room QR Code</h3>
+            <h3 id="qrCodeTitle"></h3>
             <div id="qrCodeImage"></div>
             <p>Or share this link:</p>
             <div class="input-group mb-3">
@@ -56,7 +70,15 @@
             <div id="voteResults" class="list-group">
                 <!-- Results will be populated here -->
             </div>
-            <button onclick="resetAdmin()" class="btn btn-secondary mt-3">Start New Room</button>
+        </div>
+
+        <!-- Add new section for rooms list -->
+        <div id="roomsListSection" class="mt-4 hidden">
+            <h3>Existing Rooms</h3>
+            <div id="roomsList" class="list-group">
+                <!-- Rooms will be populated here -->
+            </div>
+            <button onclick="resetAdmin()" class="btn btn-secondary mt-3">Back to Create Room</button>
         </div>
     </div>
 

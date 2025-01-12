@@ -26,6 +26,13 @@ if (roomId) {
         const votingUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
         $('#votingLink').val(votingUrl);
         
+        // Fetch room data to get voting category
+        fetch(`${API_BASE_URL}/api/rooms/${roomId}`)
+            .then(response => response.json())
+            .then(roomData => {
+                $('#qrCodeTitle').text(roomData.voting_category.replace(/_/g, ' ').toUpperCase());
+            });
+        
         new QRCode(document.getElementById("qrCodeImage"), {
             text: votingUrl,
             width: 200,
@@ -130,6 +137,7 @@ $('#createEventForm').submit(async (e) => {
             // Show QR code section
             $('#votingLink').val(votingUrl);
             $('#qrCode').removeClass('hidden');
+            $('#qrCodeTitle').text(votingCategory.replace(/_/g, ' ').toUpperCase());
             $('#resultsSection').removeClass('hidden');
             $('#createEventForm').addClass('hidden');
             
@@ -280,5 +288,50 @@ function resetAdmin() {
         clearInterval(resultsInterval);
     }
     localStorage.removeItem('adminRoomId');
+    $('#roomsListSection').addClass('hidden');
+    window.location.reload();
+}
+
+// Add this function to show all rooms
+async function showAllRooms() {
+    try {
+        // Hide other sections and show rooms list
+        $('#createEventForm').addClass('hidden');
+        $('#qrCode').addClass('hidden');
+        $('#resultsSection').addClass('hidden');
+        $('#roomsListSection').removeClass('hidden');
+
+        // Clear existing interval if any
+        if (resultsInterval) {
+            clearInterval(resultsInterval);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/rooms`);
+        const rooms = await response.json();
+
+        // Sort rooms by creation date (newest first)
+        rooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const roomsHtml = rooms.map(room => `
+            <a href="#" class="list-group-item list-group-item-action" onclick="loadExistingRoom('${room.id}')">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">${room.voting_category.replace(/_/g, ' ').toUpperCase()}</h5>
+                    <small>${new Date(room.created_at).toLocaleDateString()}</small>
+                </div>
+                <p class="mb-1">Speakers: ${room.speakers.map(s => s.name).join(', ')}</p>
+                <small>Total Votes: ${room.votes ? room.votes.length : 0}</small>
+            </a>
+        `).join('');
+
+        $('#roomsList').html(roomsHtml || '<p class="text-center">No rooms found</p>');
+    } catch (error) {
+        console.error('Failed to load rooms:', error);
+        $('#roomsList').html('<div class="alert alert-danger">Failed to load rooms</div>');
+    }
+}
+
+// Add this function to load an existing room
+function loadExistingRoom(roomId) {
+    localStorage.setItem('adminRoomId', roomId);
     window.location.reload();
 } 
