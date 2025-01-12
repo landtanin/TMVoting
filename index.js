@@ -1,18 +1,49 @@
 const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app';
 
+let resultsInterval;
+
 // Check if we're on the voting page
 const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get('room');
+const roomId = urlParams.get('room') || localStorage.getItem('adminRoomId');
 
 if (roomId) {
-    // Show voter section
-    $('#voterSection').removeClass('hidden');
-    $('#adminSection').addClass('hidden');
-    loadVotingRoom(roomId);
+    if (urlParams.get('room')) {
+        // Show voter section for voting URL
+        $('#voterSection').removeClass('hidden');
+        $('#adminSection').addClass('hidden');
+        loadVotingRoom(roomId);
+    } else {
+        // Show admin dashboard for stored admin room
+        $('#adminSection').removeClass('hidden');
+        $('#voterSection').addClass('hidden');
+        $('#createEventForm').addClass('hidden');
+        $('#qrCode').removeClass('hidden');
+        $('#resultsSection').removeClass('hidden');
+        
+        // Regenerate the QR code and voting link
+        const votingUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+        $('#votingLink').val(votingUrl);
+        
+        new QRCode(document.getElementById("qrCodeImage"), {
+            text: votingUrl,
+            width: 200,
+            height: 200
+        });
+
+        // Only show results for admin
+        displayResults(roomId);
+        if (resultsInterval) {
+            clearInterval(resultsInterval);
+        }
+        resultsInterval = setInterval(() => displayResults(roomId), 5000);
+    }
 } else {
-    // Show admin section
+    // Show initial admin form
     $('#adminSection').removeClass('hidden');
     $('#voterSection').addClass('hidden');
+    $('#createEventForm').removeClass('hidden');
+    $('#qrCode').addClass('hidden');
+    $('#resultsSection').addClass('hidden');
 }
 
 // Admin Section Logic
@@ -87,6 +118,9 @@ $('#createEventForm').submit(async (e) => {
         }
 
         if (data.success) {
+            // Store the room ID for admin persistence
+            localStorage.setItem('adminRoomId', data.roomId);
+            
             // Generate voting room URL using the returned roomId
             const votingUrl = `${window.location.href}?room=${data.roomId}`;
             
@@ -94,6 +128,7 @@ $('#createEventForm').submit(async (e) => {
             $('#votingLink').val(votingUrl);
             $('#qrCode').removeClass('hidden');
             $('#resultsSection').removeClass('hidden');
+            $('#createEventForm').addClass('hidden');
             
             new QRCode(document.getElementById("qrCodeImage"), {
                 text: votingUrl,
@@ -103,7 +138,10 @@ $('#createEventForm').submit(async (e) => {
 
             // Start monitoring results
             displayResults(data.roomId);
-            setInterval(() => displayResults(data.roomId), 5000);
+            if (resultsInterval) {
+                clearInterval(resultsInterval);
+            }
+            resultsInterval = setInterval(() => displayResults(data.roomId), 5000);
         } else {
             alert(data.error || 'Failed to create room. Please try again.');
         }
@@ -123,10 +161,7 @@ function copyLink() {
 // Voter Section Logic
 async function loadVotingRoom(roomId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
-            credentials: 'include',
-            mode: 'cors'
-        });
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
         const roomData = await response.json();
         
         if (!response.ok) {
@@ -169,8 +204,8 @@ async function loadVotingRoom(roomId) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    credentials: 'include',
-                    mode: 'cors',
+                    // credentials: 'include',
+                    // mode: 'cors',
                     body: JSON.stringify({
                         voterId,
                         speakerId
@@ -202,20 +237,31 @@ async function loadVotingRoom(roomId) {
 // Results Display Logic
 async function displayResults(roomId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
-            credentials: 'include',
-            mode: 'cors'
-        });
-        const roomData = await response.json();
+        console.log('Fetching results for room:', roomId);
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
         
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error('Response not OK:', response.status);
+            return;
+        }
+
+        const roomData = await response.json();
+        console.log('Received room data:', roomData);
+
+        // Count votes for each speaker
+        const voteCounts = {};
+        if (roomData.votes) {
+            roomData.votes.forEach(vote => {
+                voteCounts[vote.speaker_id] = (voteCounts[vote.speaker_id] || 0) + 1;
+            });
+        }
 
         // Display results based on the room data
         const resultsHtml = roomData.speakers
             .map(speaker => `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     ${speaker.name}
-                    <span class="badge bg-primary rounded-pill">${speaker.votes || 0} votes</span>
+                    <span class="badge bg-primary rounded-pill">${voteCounts[speaker.id] || 0} votes</span>
                 </div>
             `).join('');
 
@@ -223,4 +269,13 @@ async function displayResults(roomId) {
     } catch (error) {
         console.error('Failed to load results:', error);
     }
+}
+
+// Add a new function to handle admin logout
+function resetAdmin() {
+    if (resultsInterval) {
+        clearInterval(resultsInterval);
+    }
+    localStorage.removeItem('adminRoomId');
+    window.location.reload();
 } 
