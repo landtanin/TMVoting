@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Feedback</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="feedback.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div id="feedbackForm" class="mx-auto py-4 px-2">
+            <div class="speech-info">
+                <h1 id="speechTitle"></h1>
+                <p id="speakerName" class="speaker-name"></p>
+            </div>
+
+            <h2>What aspects stood out?</h2>
+            <p>Select all that apply</p>
+            
+            <div id="criteriaChips" class="mb-4">
+                <!-- Criteria chips will be populated dynamically -->
+            </div>
+
+            <div class="feedback-section">
+                <textarea class="mb-3" placeholder="Share your feedback to help the speaker improve... (optional)"></textarea>
+                <input type="text" class="evaluator-name mb-4" placeholder="Your name (optional)">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+        </div>
+    </div>
+
+    <script src="feedback.js"></script>
+</body>
+</html> 

@@ -1,0 +1,78 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.5;
+}
+
+.speech-info {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.speech-info h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #1f2937;
+}
+
+.speaker-name {
+    margin: 0.5rem 0 0 0;
+    color: #4b5563;
+    font-size: 1.1rem;
+}
+
+.criteria-chip {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.criteria-chip.selected {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.feedback-section {
+    margin-top: 1.5rem;
+}
+
+textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.evaluator-name {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+button {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+button:hover {
+    background: #1d4ed8;
+} 
