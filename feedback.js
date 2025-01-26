@@ -3,6 +3,10 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     : 'https://expressjs-postgres-production-6625.up.railway.app';
 
 $(document).ready(function() {
+    // Declare closure variables at the top of the ready function
+    let sessionTitle = '';
+    let sessionSpeakerName = '';
+
     // Get session ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('sessionId');
@@ -15,9 +19,13 @@ $(document).ready(function() {
     $.get(`${API_BASE_URL}/api/feedback-sessions/${sessionId}`)
         .done(function(response) {
             if (response.success) {
+                // Store in closure variables instead of window
+                sessionTitle = response.session.title;
+                sessionSpeakerName = response.session.speaker_name;
+                
                 // Populate speech info
-                $('#speechTitle').text(response.session.title);
-                $('#speakerName').text(`Speaker: ${response.session.speaker_name}`);
+                $('#speechTitle').text(sessionTitle);
+                $('#speakerName').text(`Speaker: ${sessionSpeakerName}`);
                 
                 // Populate criteria chips
                 const criteriaHtml = response.criteria.map(criterion => 
@@ -50,12 +58,30 @@ $(document).ready(function() {
         }).get();
 
         const feedback = {
-            evaluatorName: $('.evaluator-name').val(),
-            criteriaIds: selectedCriteria,
-            content: $('textarea').val()
+            evaluator_name: $('.evaluator-name').val(),
+            content: $('textarea').val(),
+            criteriaIds: selectedCriteria
         };
 
-        console.log('Feedback to submit:', feedback);
-        // TODO: Add API call to submit feedback
+        // Disable the submit button to prevent double submissions
+        $(this).prop('disabled', true);
+
+        $.ajax({
+            url: `${API_BASE_URL}/api/feedback-sessions/${sessionId}/feedback`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(feedback),
+            success: function(response) {
+                $('#feedbackForm').html(`<div class="alert alert-success">
+                    Thank you for your feedback on "${sessionTitle}" by ${sessionSpeakerName}!
+                </div>`);
+            },
+            error: function(error) {
+                console.error('Error submitting feedback:', error);
+                $('#feedbackForm').append('<div class="alert alert-danger">Failed to submit feedback. Please try again.</div>');
+                // Re-enable the submit button on error
+                $('#feedbackForm button').prop('disabled', false);
+            }
+        });
     });
 }); 
