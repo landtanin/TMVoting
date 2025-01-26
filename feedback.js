@@ -72,9 +72,12 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(feedback),
             success: function(response) {
-                $('#feedbackForm').html(`<div class="alert alert-success">
-                    Thank you for your feedback on "${sessionTitle}" by ${sessionSpeakerName}!
-                </div>`);
+                $('#feedbackForm').html(`
+                    <div class="alert alert-success">
+                        Thank you for your feedback on "${sessionTitle}" by ${sessionSpeakerName}!
+                    </div>
+                    <a href="https://linktr.ee/landtanin" class="btn btn-primary mt-3">Back to Home</a>
+                `);
             },
             error: function(error) {
                 console.error('Error submitting feedback:', error);
