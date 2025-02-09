@@ -24,7 +24,7 @@ $(document).ready(function() {
                 sessionSpeakerName = response.session.speaker_name;
                 
                 // Populate speech info
-                $('#speechTitle').text(sessionTitle);
+                $('#speechTitle').text(`Speech: ${sessionTitle}`);
                 $('#speakerName').text(`Speaker: ${sessionSpeakerName}`);
                 
                 // Populate criteria chips
