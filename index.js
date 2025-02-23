@@ -93,8 +93,18 @@ function updateRemoveButtons() {
     }
 }
 
+// Loading spinner functions
+function showLoading() {
+    $('#loadingOverlay').removeClass('hidden');
+}
+
+function hideLoading() {
+    $('#loadingOverlay').addClass('hidden');
+}
+
 $('#createEventForm').submit(async (e) => {
     e.preventDefault();
+    showLoading();  // Show loading spinner
     const votingCategory = $('#votingCategory').val();
     const speakerNames = [];
     $('.speaker-input').each(function() {
@@ -167,6 +177,8 @@ $('#createEventForm').submit(async (e) => {
     } catch (error) {
         console.error('Failed to create room:', error);
         alert('Failed to create room. Please try again.');
+    } finally {
+        hideLoading();  // Hide loading spinner regardless of success/failure
     }
 });
 
