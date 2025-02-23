@@ -182,11 +182,14 @@ $('#createEventForm').submit(async (e) => {
     }
 });
 
-function copyLink() {
+async function copyLink() {
     const linkInput = document.getElementById('votingLink');
-    linkInput.select();
-    document.execCommand('copy');
-    alert('Link copied to clipboard!');
+    try {
+        await navigator.clipboard.writeText(linkInput.value);
+        alert('Link copied to clipboard!');
+    } catch (err) {
+        alert('Failed to copy link');
+    }
 }
 
 // Voter Section Logic
@@ -312,14 +315,18 @@ async function displayResults(roomId) {
                     <div class="d-flex align-items-center">
                         <span class="me-2">${speaker.name}</span>
                         <button 
-                            onclick="editSpeakerName('${roomId}', '${speaker.id}', '${speaker.name}')" 
-                            class="btn btn-outline-secondary btn-sm me-1"
+                            data-room-id="${roomId}"
+                            data-speaker-id="${speaker.id}"
+                            data-speaker-name="${btoa(encodeURIComponent(speaker.name))}"
+                            class="btn btn-outline-secondary btn-sm me-1 edit-speaker-btn"
                             title="Edit name">
                             ✏️
                         </button>
                         <button 
-                            onclick="deleteSpeaker('${roomId}', '${speaker.id}', '${speaker.name}')" 
-                            class="btn btn-outline-danger btn-sm"
+                            data-room-id="${roomId}"
+                            data-speaker-id="${speaker.id}"
+                            data-speaker-name="${btoa(encodeURIComponent(speaker.name))}"
+                            class="btn btn-outline-danger btn-sm delete-speaker-btn"
                             title="Delete speaker">
                             🗑️
                         </button>
@@ -558,4 +565,22 @@ async function deleteSpeaker(roomId, speakerId, speakerName) {
     } finally {
         hideLoading(); // Hide loading spinner
     }
-} 
+}
+
+// Add event listener for edit speaker buttons
+$(document).on('click', '.edit-speaker-btn', function() {
+    const roomId = $(this).data('room-id');
+    const speakerId = $(this).data('speaker-id');
+    const encodedName = $(this).data('speaker-name');
+    const speakerName = decodeURIComponent(atob(encodedName));
+    editSpeakerName(roomId, speakerId, speakerName);
+});
+
+// Add event listener for delete speaker buttons
+$(document).on('click', '.delete-speaker-btn', function() {
+    const roomId = $(this).data('room-id');
+    const speakerId = $(this).data('speaker-id');
+    const encodedName = $(this).data('speaker-name');
+    const speakerName = decodeURIComponent(atob(encodedName));
+    deleteSpeaker(roomId, speakerId, speakerName);
+}); 
