@@ -313,9 +313,15 @@ async function displayResults(roomId) {
                         <span class="me-2">${speaker.name}</span>
                         <button 
                             onclick="editSpeakerName('${roomId}', '${speaker.id}', '${speaker.name}')" 
-                            class="btn btn-outline-secondary btn-sm"
+                            class="btn btn-outline-secondary btn-sm me-1"
                             title="Edit name">
                             ✏️
+                        </button>
+                        <button 
+                            onclick="deleteSpeaker('${roomId}', '${speaker.id}', '${speaker.name}')" 
+                            class="btn btn-outline-danger btn-sm"
+                            title="Delete speaker">
+                            🗑️
                         </button>
                     </div>
                     <span class="badge bg-primary rounded-pill">${voteCounts[speaker.id] || 0} votes</span>
@@ -514,6 +520,41 @@ async function addNewSpeaker(roomId) {
     } catch (error) {
         console.error('Failed to add new speaker:', error);
         alert('Failed to add new speaker. Please try again.');
+    } finally {
+        hideLoading(); // Hide loading spinner
+    }
+}
+
+// Add this function to delete a speaker
+async function deleteSpeaker(roomId, speakerId, speakerName) {
+    if (!confirm(`Are you sure you want to delete speaker "${speakerName}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    showLoading(); // Show loading spinner
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/speakers/${speakerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            // Refresh the results to show the updated speaker list
+            displayResults(roomId);
+        } else {
+            alert(data.error || 'Failed to delete speaker. Please try again.');
+        }
+    } catch (error) {
+        console.error('Failed to delete speaker:', error);
+        alert('Failed to delete speaker. Please try again.');
     } finally {
         hideLoading(); // Hide loading spinner
     }
