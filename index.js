@@ -457,7 +457,7 @@ function loadExistingRoom(roomId) {
 
 // Add this function to edit speaker name
 async function editSpeakerName(roomId, speakerId, currentName) {
-    const newName = prompt('Enter new name:', currentName);
+    const newName = prompt("Enter new name:", currentName);
     if (!newName || newName === currentName) return;
 
     showLoading(); // Show loading spinner
