@@ -322,7 +322,18 @@ async function displayResults(roomId) {
                 </div>
             `).join('');
 
-        $('#voteResults').html(resultsHtml);
+        // Add the "Add Speaker" button at the bottom
+        const addSpeakerButton = `
+            <div class="mt-3">
+                <button 
+                    onclick="addNewSpeaker('${roomId}')"
+                    class="btn btn-outline-primary w-100">
+                    Add New Speaker
+                </button>
+            </div>
+        `;
+
+        $('#voteResults').html(resultsHtml + addSpeakerButton);
     } catch (error) {
         console.error('Failed to load results:', error);
     }
@@ -468,6 +479,41 @@ async function editSpeakerName(roomId, speakerId, currentName) {
     } catch (error) {
         console.error('Failed to update speaker name:', error);
         alert('Failed to update speaker name. Please try again.');
+    } finally {
+        hideLoading(); // Hide loading spinner
+    }
+}
+
+// Add this function to add a new speaker
+async function addNewSpeaker(roomId) {
+    const newName = prompt('Enter speaker name:');
+    if (!newName) return;
+
+    showLoading(); // Show loading spinner
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/speakers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name: newName })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            // Refresh the results to show the new speaker
+            displayResults(roomId);
+        } else {
+            alert(data.error || 'Failed to add new speaker. Please try again.');
+        }
+    } catch (error) {
+        console.error('Failed to add new speaker:', error);
+        alert('Failed to add new speaker. Please try again.');
     } finally {
         hideLoading(); // Hide loading spinner
     }
