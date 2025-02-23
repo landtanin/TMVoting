@@ -309,7 +309,15 @@ async function displayResults(roomId) {
         const resultsHtml = roomData.speakers
             .map(speaker => `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
-                    ${speaker.name}
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">${speaker.name}</span>
+                        <button 
+                            onclick="editSpeakerName('${roomId}', '${speaker.id}', '${speaker.name}')" 
+                            class="btn btn-outline-secondary btn-sm"
+                            title="Edit name">
+                            ✏️
+                        </button>
+                    </div>
                     <span class="badge bg-primary rounded-pill">${voteCounts[speaker.id] || 0} votes</span>
                 </div>
             `).join('');
@@ -428,4 +436,39 @@ async function showAllRooms() {
 function loadExistingRoom(roomId) {
     localStorage.setItem('adminRoomId', roomId);
     window.location.reload();
+}
+
+// Add this function to edit speaker name
+async function editSpeakerName(roomId, speakerId, currentName) {
+    const newName = prompt('Enter new name:', currentName);
+    if (!newName || newName === currentName) return;
+
+    showLoading(); // Show loading spinner
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/speakers/${speakerId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name: newName })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            // Refresh the results to show the updated name
+            displayResults(roomId);
+        } else {
+            alert(data.error || 'Failed to update speaker name. Please try again.');
+        }
+    } catch (error) {
+        console.error('Failed to update speaker name:', error);
+        alert('Failed to update speaker name. Please try again.');
+    } finally {
+        hideLoading(); // Hide loading spinner
+    }
 } 
