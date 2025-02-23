@@ -292,6 +292,19 @@ async function displayResults(roomId) {
             });
         }
 
+        // Update the results section header to include the delete button
+        $('#resultsSection h3').html(`
+            <div class="d-flex justify-content-between align-items-center">
+                <span>Live Results</span>
+                <button 
+                    onclick="deleteRoom('${roomId}', '${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}')" 
+                    class="btn btn-outline-danger btn-sm"
+                    style="min-width: 70px;">
+                    Delete Room
+                </button>
+            </div>
+        `);
+
         // Display results based on the room data
         const resultsHtml = roomData.speakers
             .map(speaker => `
@@ -317,6 +330,53 @@ function resetAdmin() {
     window.location.reload();
 }
 
+// Add this function to delete a room
+async function deleteRoom(roomId, roomCategory) {
+    if (!confirm(`Are you sure you want to delete the room "${roomCategory}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    showLoading(); // Show loading spinner
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const responseText = await response.text();
+        console.log('Delete response status:', response.status);
+        console.log('Delete response text:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+        }
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            console.error('Raw response:', responseText);
+            throw new Error('Invalid JSON response from server');
+        }
+
+        if (data.success) {
+            // Refresh the rooms list
+            showAllRooms();
+        } else {
+            alert(data.error || 'Failed to delete room. Please try again.');
+        }
+    } catch (error) {
+        console.error('Failed to delete room:', error);
+        alert('Failed to delete room. Please try again.');
+    } finally {
+        hideLoading(); // Hide loading spinner
+    }
+}
+
 // Add this function to show all rooms
 async function showAllRooms() {
     try {
@@ -338,14 +398,23 @@ async function showAllRooms() {
         rooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         const roomsHtml = rooms.map(room => `
-            <a href="#" class="list-group-item list-group-item-action" onclick="loadExistingRoom('${room.id}')">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">${room.voting_category.replace(/_/g, ' ').toUpperCase()}</h5>
-                    <small>${new Date(room.created_at).toLocaleDateString()}</small>
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div onclick="loadExistingRoom('${room.id}')" style="cursor: pointer; flex-grow: 1;">
+                        <h5 class="mb-1">${room.voting_category.replace(/_/g, ' ').toUpperCase()}</h5>
+                        <p class="mb-1">Speakers: ${room.speakers.map(s => s.name).join(', ')}</p>
+                        <small>Total Votes: ${room.votes ? room.votes.length : 0}</small>
+                        <br>
+                        <small>${new Date(room.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <button 
+                        onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.voting_category.replace(/_/g, ' ').toUpperCase()}')" 
+                        class="btn btn-outline-danger btn-sm"
+                        style="min-width: 70px;">
+                        Delete
+                    </button>
                 </div>
-                <p class="mb-1">Speakers: ${room.speakers.map(s => s.name).join(', ')}</p>
-                <small>Total Votes: ${room.votes ? room.votes.length : 0}</small>
-            </a>
+            </div>
         `).join('');
 
         $('#roomsList').html(roomsHtml || '<p class="text-center">No rooms found</p>');
