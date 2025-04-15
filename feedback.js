@@ -76,7 +76,7 @@ $(document).ready(function() {
                     <div class="alert alert-success">
                         Thank you for your feedback on "${sessionTitle}" by ${sessionSpeakerName}!
                     </div>
-                    <a href="https://linktr.ee/londonathenians" class="btn btn-primary mt-3">Back to Home</a>
+                    <a href="https://linktr.ee/Londonolympians" class="btn btn-primary mt-3">Back to Home</a>
                 `);
             },
             error: function(error) {
