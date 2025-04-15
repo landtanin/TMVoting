@@ -257,7 +257,7 @@ async function loadVotingRoom(roomId) {
                             Thank you for voting for ${selectedCard.find('.card-title').text()}!
                             Your vote has been recorded for ${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}.
                         </div>
-                        <a href="https://linktr.ee/Londonolympians" class="btn btn-primary mt-3">Back to Home</a>
+                        <a href="https://linktr.ee/londonathenians" class="btn btn-primary mt-3">Back to Home</a>
                     `);
                 } else {
                     alert(data.error || 'Failed to submit vote. Please try again.');
