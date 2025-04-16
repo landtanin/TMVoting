@@ -305,7 +305,7 @@ async function displayResults(roomId) {
                 <div>
                     <button 
                         onclick="resetVotes('${roomId}', '${roomCategoryForDisplay}')" 
-                        class="btn btn-outline-warning btn-sm me-2"
+                        class="btn btn-warning btn-sm me-2"
                         title="Reset all votes for this room to allow reuse. Current votes will be deleted."
                         style="min-width: 70px;">
                         Reset Votes
