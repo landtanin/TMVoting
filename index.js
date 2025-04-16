@@ -297,16 +297,26 @@ async function displayResults(roomId) {
             });
         }
 
-        // Update the results section header to include the delete button
+        // Update the results section header to include the delete and reset buttons
+        const roomCategoryForDisplay = roomData.voting_category.replace(/_/g, ' ').toUpperCase();
         $('#resultsSection h3').html(`
             <div class="d-flex justify-content-between align-items-center">
                 <span>Live Results</span>
-                <button 
-                    onclick="deleteRoom('${roomId}', '${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}')" 
-                    class="btn btn-outline-danger btn-sm"
-                    style="min-width: 70px;">
-                    Delete Room
-                </button>
+                <div>
+                    <button 
+                        onclick="resetVotes('${roomId}', '${roomCategoryForDisplay}')" 
+                        class="btn btn-outline-warning btn-sm me-2"
+                        title="Reset all votes for this room to allow reuse. Current votes will be deleted."
+                        style="min-width: 70px;">
+                        Reset Votes
+                    </button>
+                    <button 
+                        onclick="deleteRoom('${roomId}', '${roomCategoryForDisplay}')" 
+                        class="btn btn-outline-danger btn-sm"
+                        style="min-width: 70px;">
+                        Delete Room
+                    </button>
+                </div>
             </div>
         `);
 
@@ -406,6 +416,59 @@ async function deleteRoom(roomId, roomCategory) {
     } catch (error) {
         console.error('Failed to delete room:', error);
         alert('Failed to delete room. Please try again.');
+    } finally {
+        hideLoading(); // Hide loading spinner
+    }
+}
+
+// Add this function to reset votes for a room
+async function resetVotes(roomId, roomCategory) {
+    if (!confirm(`Are you sure you want to reset all votes for the room "${roomCategory}"? This will allow reuse but delete current votes.`)) {
+        return;
+    }
+
+    showLoading(); // Show loading spinner
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/votes`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const responseText = await response.text();
+        console.log('Reset votes response status:', response.status);
+        console.log('Reset votes response text:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+        }
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            // Handle cases where backend might send non-JSON success response (e.g., just 200 OK)
+            if (response.ok) {
+                data = { success: true }; // Assume success if status is OK
+            } else {
+                console.error('Failed to parse JSON:', parseError);
+                console.error('Raw response:', responseText);
+                throw new Error('Invalid JSON response from server');
+            }
+        }
+
+        if (data.success) {
+            alert('Votes cleared successfully!');
+            // Refresh the results display to show zero votes
+            displayResults(roomId);
+        } else {
+            alert(data.error || 'Failed to reset votes. Please try again.');
+        }
+    } catch (error) {
+        console.error('Failed to reset votes:', error);
+        alert('Failed to reset votes. Please try again.');
     } finally {
         hideLoading(); // Hide loading spinner
     }
