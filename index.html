@@ -67,6 +67,26 @@
                         <button type="submit" class="btn btn-primary">Create Voting Room</button>
                     </div>
                 </form>
+                <!-- Add trigger button -->
+                <div class="text-end mt-3">
+                    <button class="btn btn-link text-muted" type="button" data-bs-toggle="collapse" data-bs-target="#createRoomManual">
+                        View Manual
+                    </button>
+                </div>
+                <!-- Add collapsible content -->
+                <div class="collapse mt-2" id="createRoomManual">
+                    <hr>
+                    <h4>How to Create a New Voting Room</h4>
+                    <img src="images/create-voting.png" alt="Screenshot of the create voting room form" style="max-width: 100%; height: auto; margin-bottom: 1em; border: 2px solid #0d6efd; border-radius: 8px; display: block; margin-left: auto; margin-right: auto;">
+                    <ol>
+                        <li id="step-1">Click "Start New Room" on top right</li>
+                        <li id="step-2">Select voting category</li>
+                        <li id="step-3">Add speakers</li>
+                        <li id="step-4">Click "Create Voting Room"</li>
+                        <li id="step-5">The QR code and live results will appear. The room is also added to the "View Existing Rooms" list.</li>
+                    </ol>
+                    <p class="mt-3 text-muted"><small>For the full guide, see the <a href="manual.html" class="text-reset">complete manual</a>.</small></p>
+                </div>
             </div>
         </div>
 
@@ -87,19 +107,80 @@
             <div id="voteResults" class="list-group">
                 <!-- Results will be populated here -->
             </div>
+            <!-- Add trigger button -->
+            <div class="text-end mt-3">
+                <button class="btn btn-link text-muted" type="button" data-bs-toggle="collapse" data-bs-target="#roomDetailsManual">
+                    View Manual
+                </button>
+            </div>
+            <!-- Add collapsible content -->
+            <div class="collapse mt-2" id="roomDetailsManual">
+                <hr>
+                <h4>Room Details & Results</h4>
+                <img src="images/room-details.png" alt="Screenshot of the room details and live results view" style="max-width: 100%; height: auto; margin-bottom: 1em; border: 2px solid #0d6efd; border-radius: 8px; display: block; margin-left: auto; margin-right: auto;">
+                <p>This view appears automatically after creating a new room or loading one from the "View Existing Rooms" section. It's the hub for managing an active session.</p>
+                <ul>
+                    <li><strong>Sharing Options:</strong>
+                        <ul>
+                            <li>Displays a QR Code and a direct voting link for participants.</li>
+                            <li>Includes a "Copy" button to easily grab the link.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Live Results & Management:</strong>
+                        <ul>
+                            <li>Shows speakers and their current vote counts.</li>
+                            <li>The results update automatically every few seconds.</li>
+                            <li>Speaker Management Actions:
+                                <ol>
+                                    <li><strong>Edit Name:</strong> Click the pencil icon (✏️) next to a speaker.</li>
+                                    <li><strong>Delete Speaker:</strong> Click the trash can icon (🗑️) next to a speaker (removes speaker and votes).</li>
+                                    <li><strong>Add Speaker:</strong> Use the "Add New Speaker" button located below the results list.</li>
+                                </ol>
+                            </li>
+                            <li><strong>Delete Room:</strong> Use the "Delete Room" button located at the top-right of the results section to remove the entire session permanently (requires confirmation).</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p class="mt-3 text-muted"><small>For the full guide, see the <a href="manual.html" class="text-reset">complete manual</a>.</small></p>
+            </div>
         </div>
 
         <!-- Add new section for rooms list -->
         <div id="roomsListSection" class="mt-4 hidden">
-            <h3>Existing Rooms</h3>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="mb-0">Existing Rooms</h3>
+                <button class="btn btn-link text-muted pb-0" type="button" data-bs-toggle="collapse" data-bs-target="#roomsListManual">
+                    View Manual
+                </button>
+            </div>
+            <!-- Add collapsible content -->
+            <div class="collapse mt-2" id="roomsListManual">
+                <hr>
+                <h4>Viewing Existing Rooms</h4>
+                <img src="images/existing-rooms.png" alt="Screenshot showing the list of existing rooms" style="max-width: 100%; height: auto; margin-bottom: 1em; border: 2px solid #0d6efd; border-radius: 8px; display: block; margin-left: auto; margin-right: auto;">
+                <ol>
+                    <li>Click the "View Existing Rooms" button located in the top-right navigation bar.</li>
+                    <li>This will display a list of all previously created voting rooms.</li>
+                    <li>Each room card shows:
+                        <ul>
+                            <li>The Voting Category</li>
+                            <li>Comma-separated Speaker Names</li>
+                            <li>Total number of Votes received</li>
+                            <li>The date the room was Created</li>
+                        </ul>
+                    </li>
+                    <li>You can click on a room card to load its details and view live results (see "Room Details & Results" section).</li>
+                    <li>You can also click the "Delete" button on a card to permanently remove that room.</li>
+                </ol>
+                <p class="mt-3 text-muted"><small>For the full guide, see the <a href="manual.html" class="text-reset">complete manual</a>.</small></p>
+            </div>
             <div id="roomsList" class="list-group">
                 <!-- Rooms will be populated here -->
             </div>
+            
+            
             <button onclick="resetAdmin()" class="btn btn-secondary mt-3">Back to Create Room</button>
         </div>
-        <footer class="admin-footer mt-5 pt-3 border-top text-end">
-            <a href="manual.html" class="text-muted">View Manual</a>
-        </footer>
     </div>
 
     <!-- Voter Section -->
