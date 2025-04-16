@@ -23,6 +23,8 @@ if (roomId) {
         isAdmin = true;
         $('#adminSection').removeClass('hidden');
         $('#voterSection').addClass('hidden');
+        $('#adminSection > h2').addClass('hidden'); // Hide "Admin Dashboard" heading
+        $('#adminSection > .card').addClass('hidden'); // Hide the Create Room card + manual
         $('#createEventForm').addClass('hidden');
         $('#qrCode').removeClass('hidden');
         $('#resultsSection').removeClass('hidden');
@@ -413,6 +415,8 @@ async function deleteRoom(roomId, roomCategory) {
 async function showAllRooms() {
     try {
         // Hide other sections and show rooms list
+        $('#adminSection > h2').addClass('hidden'); // Hide "Admin Dashboard" heading
+        $('#adminSection > .card').addClass('hidden'); // Hide the Create Room card + manual
         $('#createEventForm').addClass('hidden');
         $('#qrCode').addClass('hidden');
         $('#resultsSection').addClass('hidden');
