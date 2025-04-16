@@ -38,4 +38,19 @@
 .loading-overlay .spinner-border {
     width: 3rem;
     height: 3rem;
+}
+
+body {
+    padding-bottom: 1rem; /* Add space at the bottom */
+}
+
+#submitVote {
+    position: sticky;
+    bottom: 0;
+    padding-top: 1rem;    /* Space above button text */
+    padding-bottom: 1rem; /* Space below button text */
+    border-top: 1px solid #dee2e6; /* Subtle top border */
+    z-index: 10; /* Ensure it stays above speaker cards when scrolling */
+    /* Bootstrap's w-100 class handles width */
+    /* Keep Bootstrap's mt-4 class for margin-top */
 } 
