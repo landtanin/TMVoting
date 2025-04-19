@@ -1,6 +1,8 @@
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3333'
-    : 'https://expressjs-postgres-production-6625.up.railway.app';
+// const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+//     ? 'http://localhost:3333'
+//     : 'https://expressjs-postgres-production-6625.up.railway.app';
+
+const API_BASE_URL = 'https://expressjs-postgres-production-6625.up.railway.app';
 
 let isAdmin = false;
 
@@ -297,7 +299,7 @@ async function displayResults(roomId) {
             });
         }
 
-        // Update the results section header to include the delete and reset buttons
+        // Update the results section header to include the reset and clear buttons
         const roomCategoryForDisplay = roomData.voting_category.replace(/_/g, ' ').toUpperCase();
         $('#resultsSection h3').html(`
             <div class="d-flex justify-content-between align-items-center">
@@ -311,10 +313,11 @@ async function displayResults(roomId) {
                         Reset Votes
                     </button>
                     <button 
-                        onclick="deleteRoom('${roomId}', '${roomCategoryForDisplay}')" 
-                        class="btn btn-outline-danger btn-sm"
+                        onclick="clearRoom('${roomId}', '${roomCategoryForDisplay}')" 
+                        class="btn btn-outline-secondary btn-sm"
+                        title="Remove all speakers and votes from this room."
                         style="min-width: 70px;">
-                        Delete Room
+                        Clear Room
                     </button>
                 </div>
             </div>
@@ -364,25 +367,26 @@ async function displayResults(roomId) {
     }
 }
 
-// Add a new function to handle admin logout
+// Add a new function to handle admin logout/reset to create view
 function resetAdmin() {
     if (resultsInterval) {
         clearInterval(resultsInterval);
     }
     localStorage.removeItem('adminRoomId');
-    $('#roomsListSection').addClass('hidden');
-    window.location.reload();
+    $('#roomsListSection').addClass('hidden'); // Ensure rooms list is hidden
+    // Reload the page, which will show the create form by default
+    window.location.reload(); 
 }
 
-// Add this function to delete a room
-async function deleteRoom(roomId, roomCategory) {
-    if (!confirm(`Are you sure you want to delete the room "${roomCategory}"? This action cannot be undone.`)) {
+// Add this function to clear a room (remove speakers and votes)
+async function clearRoom(roomId, roomCategory) {
+    if (!confirm(`Are you sure you want to clear the room "${roomCategory}"? This will remove all speakers and votes, making the room empty and reusable.`)) {
         return;
     }
 
     showLoading(); // Show loading spinner
     try {
-        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/speakers`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -391,8 +395,8 @@ async function deleteRoom(roomId, roomCategory) {
         });
 
         const responseText = await response.text();
-        console.log('Delete response status:', response.status);
-        console.log('Delete response text:', responseText);
+        console.log('Clear room response status:', response.status);
+        console.log('Clear room response text:', responseText);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
@@ -402,20 +406,26 @@ async function deleteRoom(roomId, roomCategory) {
         try {
             data = JSON.parse(responseText);
         } catch (parseError) {
-            console.error('Failed to parse JSON:', parseError);
-            console.error('Raw response:', responseText);
-            throw new Error('Invalid JSON response from server');
+            // Handle cases where backend might send non-JSON success response
+            if (response.ok) {
+                data = { success: true }; // Assume success if status is OK
+            } else {
+                console.error('Failed to parse JSON:', parseError);
+                console.error('Raw response:', responseText);
+                throw new Error('Invalid JSON response from server');
+            }
         }
 
         if (data.success) {
-            // Refresh the rooms list
-            showAllRooms();
+            alert('Room cleared successfully!');
+            // Refresh the results display to show an empty speaker list
+            displayResults(roomId);
         } else {
-            alert(data.error || 'Failed to delete room. Please try again.');
+            alert(data.error || 'Failed to clear room. Please try again.');
         }
     } catch (error) {
-        console.error('Failed to delete room:', error);
-        alert('Failed to delete room. Please try again.');
+        console.error('Failed to clear room:', error);
+        alert('Failed to clear room. Please try again.');
     } finally {
         hideLoading(); // Hide loading spinner
     }
@@ -496,25 +506,28 @@ async function showAllRooms() {
         // Sort rooms by creation date (newest first)
         rooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        const roomsHtml = rooms.map(room => `
+        const roomsHtml = rooms.map(room => {
+            const roomCategoryForDisplay = room.voting_category.replace(/_/g, ' ').toUpperCase();
+            return `
             <div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between align-items-start">
                     <div onclick="loadExistingRoom('${room.id}')" style="cursor: pointer; flex-grow: 1;">
-                        <h5 class="mb-1">${room.voting_category.replace(/_/g, ' ').toUpperCase()}</h5>
+                        <h5 class="mb-1">${roomCategoryForDisplay}</h5>
                         <p class="mb-1">Speakers: ${room.speakers.map(s => s.name).join(', ')}</p>
                         <small>Total Votes: ${room.votes ? room.votes.length : 0}</small>
                         <br>
                         <small>${new Date(room.created_at).toLocaleDateString()}</small>
                     </div>
                     <button 
-                        onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.voting_category.replace(/_/g, ' ').toUpperCase()}')" 
-                        class="btn btn-outline-danger btn-sm"
+                        onclick="event.stopPropagation(); clearRoom('${room.id}', '${roomCategoryForDisplay}')" 
+                        class="btn btn-outline-secondary btn-sm"
+                        title="Clear speakers and votes from this room."
                         style="min-width: 70px;">
-                        Delete
+                        Clear
                     </button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
         $('#roomsList').html(roomsHtml || '<p class="text-center">No rooms found</p>');
     } catch (error) {
