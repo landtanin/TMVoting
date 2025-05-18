@@ -261,7 +261,7 @@ async function loadVotingRoom(roomId) {
                             You voted for ${selectedCard.find('.card-title').text()} for ${roomData.voting_category.replace(/_/g, ' ').toUpperCase()}.
                             You can now close this window.
                         </div>
-                        <button onclick="window.open('https://linktr.ee/londonathenians', '_blank'); window.close();" class="btn btn-primary mt-3">Close and Back to Home</button>
+                        <button onclick="window.open('https://linktr.ee/londonathenians', '_blank'); window.close();" class="btn btn-primary mt-3">Back to Home</button>
                     `);
                 } else {
                     alert(data.error || 'Failed to submit vote. Please try again.');
